@@ -254,7 +254,6 @@
                         Are you sure you want to delete
                         <strong>"{{ deleteItem?.title }}"</strong>?
                     </p>
-                    <p class="text-caption text--secondary mt-2">This action cannot be undone.</p>
                 </v-card-text>
 
                 <v-card-actions class="pa-6 pt-0">
@@ -262,18 +261,20 @@
                     <v-btn
                         text
                         @click="deleteDialog = false"
-                        class="mr-3"
+                        class="px-6 mb-3 "
+                        elevation="2"
+                        rounded
                     >
                         Cancel
                     </v-btn>
                     <v-btn
-                        color="error"
                         :loading="loadingSave"
                         @click="performDelete"
                         elevation="2"
-                        class="px-6"
+                        class="px-6 mb-3 bg-red"
+                        rounded
                     >
-                        <v-icon left>mdi-delete</v-icon>
+                        <v-icon left>mdi-delete</v-icon> &nbsp;
                         Delete Post
                     </v-btn>
                 </v-card-actions>
