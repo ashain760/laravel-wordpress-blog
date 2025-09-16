@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'wp' => [
+        'api_url' => env('WP_API_URL'),
+        'client_id' => env('WP_CLIENT_ID'),
+        'client_secret' => env('WP_CLIENT_SECRET'),
+        'redirect' => env('WP_REDIRECT_URI'),
+        'site_id' => env('WP_SITE_ID'),
+    ],
+
 ];

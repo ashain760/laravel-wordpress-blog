@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laravel Backoffice</title>
+    <title>Laravel Wordpress Blog | Backoffice</title>
     @vite('resources/js/main.js')
 </head>
 <body>
