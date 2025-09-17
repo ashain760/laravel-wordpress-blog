@@ -28,7 +28,9 @@ class WpPostController extends Controller
                 ['title'=>$p['title'], 'content'=>$p['content'], 'status'=>$p['status']]
             );
         }
-        return WpPost::orderBy('priority','asc')->get();
+        return WpPost::orderByRaw('priority IS NULL') // false (0) first, true (1) last
+                ->orderBy('priority', 'asc')
+                ->get();
     }
 
     public function store(Request $req) {
