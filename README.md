@@ -92,7 +92,7 @@ php artisan serve
 
 ![blog](public/screenshots/2.jpg)
 
-##### Sample ADMIN WordPress account login details:
+##### Sample ADMIN WordPress account login details (wordpress.com):
 
 Username:
 ```
