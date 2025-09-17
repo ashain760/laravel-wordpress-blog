@@ -71,7 +71,6 @@ class WpPostController extends Controller
             'title'    => $wpData['title'],
             'content'  => $wpData['content'],
             'status'   => $wpData['status'],
-            'priority' => $data['priority'] ?? 0,
             'user_id'  => $user->id,
         ]);
 
