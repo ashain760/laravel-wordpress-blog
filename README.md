@@ -117,13 +117,13 @@ james@123
 
 ![blog](public/screenshots/3.jpg)
 
-3. After approval & login success it redirects to blog post page
+4. After approval & login success it redirects to blog post page
 
 ![blog](public/screenshots/4.jpg)
 
 ![blog](public/screenshots/5.jpg)
 
-4. In blog post page you can add edit delete sync search blogs
+5. In blog post page you can add edit delete sync search blogs
 
 ##### Create blogs
 
