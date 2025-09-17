@@ -33,7 +33,17 @@ class WpPostController extends Controller
 
     public function store(Request $req) {
 
-        $req->validate(['title'=>'required','content'=>'required']);
+        try {
+            $req->validate([
+                'title' => 'required',
+                'content' => 'required'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $data = $req->only(['title', 'content', 'status']);
 
@@ -75,7 +85,17 @@ class WpPostController extends Controller
 
     public function update(Request $req, $id) {
 
-        $req->validate(['title'=>'required','content'=>'required']);
+        try {
+            $req->validate([
+                'title' => 'required',
+                'content' => 'required'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
 
         $data = $req->only(['id', 'title', 'content', 'status']);
 
@@ -114,7 +134,10 @@ class WpPostController extends Controller
         $post = WpPost::findOrFail($id); $user = $this->currentUser();
         Http::withToken($user->access_token)->post($this->wpBase()."/posts/{$post->wp_id}/delete");
         $post->delete();
-        return ['ok'=>true];
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully deleted post',
+        ], 200);
     }
 
     public function setPriority(Request $req, $id) {

@@ -164,6 +164,8 @@
                         v-model="editForm.title"
                         label="Title"
                         class="white-bg-input"
+                        :error="!!errors.edit.title"
+                        :error-messages="errors.edit.title"
                     />
 
                     <p class="cnt">Content</p>
@@ -173,6 +175,7 @@
                         theme="snow"
                         style="height: 200px; margin-bottom: 20px;"
                     />
+                    <div style="margin-bottom: 20px; font-size: 12px; color: rgb(175 0 31);" v-if="errors.edit.content" class="text-red-600 text-sm">{{ errors.create.content[0] }}</div>
                     <v-select
                         v-model="editForm.status"
                         :items="['publish', 'draft']"
@@ -193,7 +196,7 @@
                     <v-btn
                         @click="editDialog = false"
                         elevation="2"
-                        class="px-6 mb-3 bg-red"
+                        class="px-6 mb-3 bg-red me-5"
                         rounded
                     >Cancel</v-btn>
                 </v-card-actions>
@@ -209,14 +212,17 @@
                         v-model="createForm.title"
                         label="Title"
                         class="white-bg-input"
+                        :error="!!errors.create.title"
+                        :error-messages="errors.create.title"
                     />
                     <p class="cnt">Content</p>
                     <QuillEditor
                         v-model:content="createForm.content"
                         content-type="html"
                         theme="snow"
-                        style="height: 200px; margin-bottom: 20px;"
+                        style="height: 200px; margin-bottom: 5px;"
                     />
+                    <div style="margin-bottom: 20px; font-size: 12px; color: rgb(175 0 31);" v-if="errors.create.content" class="text-red-600 text-sm">{{ errors.create.content[0] }}</div>
                     <v-select
                         v-model="createForm.status"
                         :items="['publish', 'draft']"
@@ -237,7 +243,7 @@
                     <v-btn
                         @click="createDialog = false"
                         elevation="2"
-                        class="px-6 mb-3 bg-red"
+                        class="px-6 mb-3 bg-red me-5"
                         rounded
                     >Cancel</v-btn>
                 </v-card-actions>
@@ -288,6 +294,8 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
+import { useSnackbar } from '../libs/snackbar/useSnackbar.js'
+const { notify } = useSnackbar()
 
 const posts = ref([])
 const search = ref('')
@@ -315,6 +323,11 @@ const deleteDialog = ref(false)
 const editForm = ref({ id: null, title: '', content: '', status: '', priority: 0 })
 const createForm = ref({ title: '', content: '', status: 'draft', priority: 0 })
 const deleteItem = ref(null)
+
+const errors = ref({
+    create: {},
+    edit: {}
+})
 
 // Helper function to truncate content
 const truncateContent = (content) => {
@@ -353,12 +366,18 @@ const saveEdit = async () => {
     loadingSave.value = true
     try {
         const { id, title, content, status, priority } = editForm.value
-        await axios.put(`/api/posts/${id}`, { title, content, status, priority })
+        const res = (await axios.put(`/api/posts/${id}`, { title, content, status, priority }))
         editDialog.value = false
         await refresh()
+        notify(res.data.message, { color: 'success', duration: 4000 })
     } catch (error) {
-        console.error('Error saving post:', error)
-        chkUnauthorized(error.status);
+        if (error.response?.status === 422) {
+            errors.value.create = error.response.data.errors || {}
+        } else {
+            notify('Somethis went wrong', { color: 'error', duration: 4000 })
+            console.error('Error creating post:', error)
+            chkUnauthorized(error.status);
+        }
     } finally {
         loadingSave.value = false
     }
@@ -373,12 +392,18 @@ const saveCreate = async () => {
     loadingSave.value = true
     try {
         const { title, content, status, priority } = createForm.value
-        await axios.post(`/api/posts`, { title, content, status, priority })
+        const res = (await axios.post(`/api/posts`, { title, content, status, priority }))
         createDialog.value = false
         await refresh()
+        notify(res.data.message, { color: 'success', duration: 4000 })
     } catch (error) {
-        console.error('Error creating post:', error)
-        chkUnauthorized(error.status);
+        if (error.response?.status === 422) {
+            errors.value.create = error.response.data.errors || {}
+        } else {
+            notify('Somethis went wrong', { color: 'error', duration: 4000 })
+            console.error('Error creating post:', error)
+            chkUnauthorized(error.status);
+        }
     } finally {
         loadingSave.value = false
     }
@@ -392,9 +417,10 @@ const confirmDelete = (item) => {
 const performDelete = async () => {
     loadingSave.value = true
     try {
-        await axios.delete(`/api/posts/${deleteItem.value.id}`)
+        const res = (await axios.delete(`/api/posts/${deleteItem.value.id}`))
         deleteDialog.value = false
         await refresh()
+        notify(res.data.message, { color: 'success', duration: 4000 })
     } catch (error) {
         console.error('Error deleting post:', error)
         chkUnauthorized(error.status);
@@ -426,6 +452,7 @@ const logout  = async () => {
 }
 
 const chkUnauthorized = (status) => {
+    notify('Unauthorized Access', { color: 'error', duration: 4000 })
     if(status == 401){
         location.href = '/';
     }
@@ -436,12 +463,17 @@ onMounted(refresh)
 
 <style>
 
-.cnt{
-  margin-top: -8px;
-  color: rgb(137, 137, 137);
-  font-size: 14px;
-  margin-bottom: 10px;
-  margin-left: 16px;
+.v-text-field .v-input__details {
+    padding-inline: 0px!important;
+    margin-bottom: 10px;
+}
+
+.cnt {
+    margin-top: 0px;
+    color: rgb(137, 137, 137);
+    font-size: 14px;
+    margin-bottom: 10px;
+    margin-left: 1px;
 }
 
 .fld-borded{

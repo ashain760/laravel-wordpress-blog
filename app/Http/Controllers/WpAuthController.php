@@ -6,6 +6,7 @@ use App\Models\WpUser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class WpAuthController extends Controller
 {
@@ -13,22 +14,30 @@ class WpAuthController extends Controller
         return config('services.wp.api_url');
     }
 
-    public function redirectToWp() {
+    // Step 1: return WP authorize URL
+    public function redirectToWp(Request $request) {
         $url = $this->wpBase() . "oauth2/authorize?" . http_build_query([
                 'client_id' => config('services.wp.client_id'),
                 'redirect_uri' => config('services.wp.redirect'),
                 'response_type' => 'code',
                 'scope' => 'global',
             ]);
-        return redirect($url);
+
+        return response()->json(['url' => $url]);
     }
 
+    // Step 2: handle callback and return JSON with tokens + user
     public function handleCallback(Request $request) {
+
         $code = $request->query('code');
+        if (!$code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Auth failed',
+            ], 400);
+        }
 
-        if (!$code) return redirect('/')->with('error','Auth failed');
-
-        $tokenResp = Http::asForm()->post($this->wpBase() . 'oauth2/token', [
+        $tokenResp = Http::asForm()->post($this->wpBase().'oauth2/token', [
             'client_id' => config('services.wp.client_id'),
             'client_secret' => config('services.wp.client_secret'),
             'redirect_uri' => config('services.wp.redirect'),
@@ -37,27 +46,39 @@ class WpAuthController extends Controller
         ]);
 
         if ($tokenResp->failed()) {
-            return redirect('/')->with('error','Token exchange failed');
+            return response()->json([
+                'success' => false,
+                'message' => 'Token exchange failed',
+            ], 400);
         }
 
         $token = $tokenResp->json();
 
-        $me = Http::withToken($token['access_token'])->get($this->wpBase() . 'rest/v1.1/me')->json();
-        $sites = Http::withToken($token['access_token'])->get($this->wpBase() . 'rest/v1.1/me/sites')->json();
+        $me = Http::withToken($token['access_token'])
+            ->get($this->wpBase().'rest/v1.1/me')
+            ->json();
+
+        $sites = Http::withToken($token['access_token'])
+            ->get($this->wpBase().'rest/v1.1/me/sites')
+            ->json();
 
         $site = collect($sites['sites'] ?? [])->firstWhere('ID', config('services.wp.site_id'));
-
         if (!$site) {
-            return redirect('/')->with('error', 'Site not found');
+            return response()->json([
+                'success' => false,
+                'message' => 'Site not found',
+            ], 403);
         }
 
-        // Check if user has at least "manage_options" capability
         $capabilities = $site['capabilities'] ?? [];
-
         if (!($capabilities['manage_options'] ?? false) && !($capabilities['edit_posts'] ?? false)) {
-            return redirect('/')->with('error', 'You are not an admin for this site');
+            return response()->json([
+                'success' => false,
+                'message' => 'Not authorized',
+            ], 403);
         }
 
+        // Save user
         $user = WpUser::updateOrCreate(
             ['wordpress_id' => $me['ID']],
             [
@@ -70,6 +91,10 @@ class WpAuthController extends Controller
         );
 
         session(['wp_user_id' => $user->id]);
-        return redirect('/blog-posts');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Successfully logged in',
+        ], 200);
     }
 }
